@@ -78,8 +78,8 @@ class Certificado:
                     columns=table.iloc[0]).drop(table.index[0])
                 for column in table.columns:
                     if '\r' in column:
-                        novo_nome = column.replace('\r', ' ')
-                        new_table = table.rename(columns={column: novo_nome})
+                        new_table = table.rename(
+                            columns={column: 'Unidade de\rMedida'})
                 print(new_table)  # irá printar a tabela
 
             if new_table is not None:
@@ -96,17 +96,17 @@ class Certificado:
                             self.certificate["Valor de indicação"].extend(
                                 new_table[column].to_list())
                         if "Erro" in column:
-                            print("Existe uma coluna com o nome 'VI'")
+                            print("Existe uma coluna com o nome 'Erro'")
                             self.certificate["Erro"].extend(
                                 new_table[column].to_list())
                         if "Incerteza" in column:
-                            print("Existe uma coluna com o nome 'VI'")
+                            print("Existe uma coluna com o nome 'Incerteza'")
                             self.certificate["Incerteza expandida"].extend(
                                 new_table[column].to_list())
-                        # if "Unidade" in column:
-                        #     print("Existe uma coluna com o nome 'VI'")
-                        #     self.certificate["Unidade de medida"].extend(
-                        #         new_table[column].to_list())
+                        if 'Unidade de\rMedida' in column:
+                            print("Existe uma coluna com o nome 'Unidade de medida'")
+                            self.certificate["Unidade de medida"].extend(
+                                new_table[column].to_list())
             else:
                 print("Tabela não encontrada")
         print(self.certificate)
