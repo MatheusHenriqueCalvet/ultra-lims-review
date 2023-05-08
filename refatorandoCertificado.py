@@ -84,29 +84,29 @@ class Certificado:
 
             if new_table is not None:
                 for column in table.columns:
-                    # if new_table.columns.str.contains("VRef").any():
-                    if "VRef" in column:
-                        print("Existe uma coluna com o nome 'VRef'")
-                        # for valor in new_table["VRef"]:
-                        #     self.certificate["Valor de referência"].append(valor)
-                        self.certificate["Valor de referência"].extend(
-                            new_table[column].to_list())
-                    if "VI" in column:
-                        print("Existe uma coluna com o nome 'VI'")
-                        self.certificate["Valor de indicação"].extend(
-                            new_table[column].to_list())
-                    if "Erro" in column:
-                        print("Existe uma coluna com o nome 'VI'")
-                        self.certificate["Erro"].extend(
-                            new_table[column].to_list())
-                    if "Incerteza" in column:
-                        print("Existe uma coluna com o nome 'VI'")
-                        self.certificate["Incerteza expandida"].extend(
-                            new_table[column].to_list())
-                    if "Unidade" in column:
-                        print("Existe uma coluna com o nome 'VI'")
-                        self.certificate["Unidade de medida"].extend(
-                            new_table[column].to_list())
+                    if new_table.columns.str.contains("VRef").any():
+                        if "VRef" in column:
+                            print("Existe uma coluna com o nome 'VRef'")
+                            # for valor in new_table["VRef"]:
+                            #     self.certificate["Valor de referência"].append(valor)
+                            self.certificate["Valor de referência"].extend(
+                                new_table[column].to_list())
+                        if "VI" in column:
+                            print("Existe uma coluna com o nome 'VI'")
+                            self.certificate["Valor de indicação"].extend(
+                                new_table[column].to_list())
+                        if "Erro" in column:
+                            print("Existe uma coluna com o nome 'VI'")
+                            self.certificate["Erro"].extend(
+                                new_table[column].to_list())
+                        if "Incerteza" in column:
+                            print("Existe uma coluna com o nome 'VI'")
+                            self.certificate["Incerteza expandida"].extend(
+                                new_table[column].to_list())
+                        # if "Unidade" in column:
+                        #     print("Existe uma coluna com o nome 'VI'")
+                        #     self.certificate["Unidade de medida"].extend(
+                        #         new_table[column].to_list())
             else:
                 print("Tabela não encontrada")
         print(self.certificate)
