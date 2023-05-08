@@ -1,9 +1,10 @@
+
 import tabula
-import pandas as pd
 import tkinter as tk
 from tkinter import filedialog
 import os
 from PyPDF2 import PdfReader
+import pandas as pd
 
 
 class Certificado:
@@ -15,6 +16,16 @@ class Certificado:
         self.equipment_name = equipment_name
         # self.calibration_table = calibration_table
         # self.certificate_type = certificate_type
+        self.certificate = {
+            "Valor de referência": [],
+            "Valor de indicação": [],
+            "Erro": [],
+            "Incerteza expandida": [],
+            "Unidade de medida": [],
+            "Nome do equipamento": "",
+            "Data de calibração": "",
+            "Número do certificado": ""
+        }
 
     def read_certificate(self):
 
@@ -30,7 +41,8 @@ class Certificado:
             print("O arquivo selecionado foi: ", folder_path)
             filename = os.path.basename(folder_path)
             self.equipment_name = filename[:-4]
-            print(filename)
+            print(f'O código do equipamento é {self.equipment_name}')
+            self.certificate["Nome do equipamento"] = self.equipment_name
             self.open_certificate(folder_path)
         else:
             folder_path = filedialog.askdirectory()
@@ -40,47 +52,95 @@ class Certificado:
                 print(file)
                 filename = os.path.basename(file)
                 self.equipment_name = filename[:-4]
+                self.certificate = ["Nome do equipamento"].append(
+                    self.equipment_name)
+                print(f'O código do equipamento é {self.equipment_name}')
+                self.certificate["Nome do equipamento"] = self.equipment_name
                 self.open_certificate(folder_path + "/" + filename)
 
     def open_certificate(self, diretorio):
 
         self.search_certificate(diretorio)
 
-        lista_tabelas = tabula.read_pdf(diretorio, pages='all')
+        # print("Número de páginas no open_certificate", self.num_pages)
+        # print(type(self.num_pages))
 
-        tabela = lista_tabelas[0]
+        tables = tabula.read_pdf(diretorio, pages='all')
 
-        tabela = tabela.iloc[:, :-2]
+        new_table = None
 
-        teste = tabela.rename(columns=tabela.iloc[0]).drop(tabela.index[0])
+        for table in tables:
+            if isinstance(table, pd.DataFrame) and len(table.columns) >= 4:
+                print(
+                    f'O tamanho de colunas na tabela é: {len(table.columns)}')
+                table.iloc[:, :-2]
+                table = table.rename(
+                    columns=table.iloc[0]).drop(table.index[0])
+                for column in table.columns:
+                    if '\r' in column:
+                        new_table = table.rename(
+                            columns={column: 'Unidade de\rMedida'})
+                print(new_table)  # irá printar a tabela
 
-        for column in teste.columns:
-            # print("coluna: ", column)
-            if '\r' in column:
-                # print("Nome com quebra-libra")
-                novo_nome = column.replace('\r', '')
-                teste = teste.rename(columns={column: novo_nome})
-            # else:
-                # print("Nome sem quebra-linha")
-
-        print(teste)
+            if new_table is not None:
+                for column in table.columns:
+                    if new_table.columns.str.contains("VRef").any():
+                        if "VRef" in column:
+                            print("Existe uma coluna com o nome 'VRef'")
+                            # for valor in new_table["VRef"]:
+                            #     self.certificate["Valor de referência"].append(valor)
+                            self.certificate["Valor de referência"].extend(
+                                new_table[column].to_list())
+                        if "VI" in column:
+                            print("Existe uma coluna com o nome 'VI'")
+                            self.certificate["Valor de indicação"].extend(
+                                new_table[column].to_list())
+                        if "Erro" in column:
+                            print("Existe uma coluna com o nome 'Erro'")
+                            self.certificate["Erro"].extend(
+                                new_table[column].to_list())
+                        if "Incerteza" in column:
+                            print("Existe uma coluna com o nome 'Incerteza'")
+                            self.certificate["Incerteza expandida"].extend(
+                                new_table[column].to_list())
+                        if 'Unidade de\rMedida' in column:
+                            print("Existe uma coluna com o nome 'Unidade de medida'")
+                            self.certificate["Unidade de medida"].extend(
+                                new_table[column].to_list())
+            else:
+                print("Tabela não encontrada")
+        print(self.certificate)
 
     def search_certificate(self, diretorio):
+
+        exist_validate = False
+        exist_certificate = False
+
         with open(diretorio, 'rb') as f:
             pdf = PdfReader(f)
+            self.num_pages = len(pdf.pages)
+            print(f'O arquivo tem {self.num_pages} de páginas!')
             for page in pdf.pages:
                 page_text = page.extract_text()
+
                 if 'recebimento' in page_text.lower():
-                    print("Achou o Recebimento")
-                    for line in page_text.split('\n'):
-                        if 'recebimento' in line.lower():
-                            print("Data de calibração: ", line[65:76])
+                    if exist_validate is not True:
+                        for line in page_text.split('\n'):
+                            if 'recebimento' in line.lower():
+                                print("Data de calibração: ", line[65:76])
+                                self.validation_data = line[65:76]
+                                self.certificate["Data de calibração"] = self.validation_data
+                                exist_validate = True
 
                 if 'CERTIFICADO' in page_text:
-                    print("Achou o certificado")
-                    for line in page_text.split('\n'):
-                        if 'CERTIFICADO' in line:
-                            print("certificado: ", line[82:91])
+                    if exist_certificate is not True:
+                        for line in page_text.split('\n'):
+                            if 'CERTIFICADO' in line:
+                                print("O código do certificado é: ",
+                                      line[82:91])
+                                self.certificate_number = line[82:91]
+                                self.certificate["Número do certificado"] = self.certificate_number
+                                exist_certificate = True
 
         return True
 
